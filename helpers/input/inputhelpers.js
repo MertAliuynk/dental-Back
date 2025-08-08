@@ -1,4 +1,4 @@
-const bcrypt = require("bcryptjs")
+const bcrypt = require("bcrypt")
 const validateUserInput = (email,password)=>{
 
     return email&&password;
