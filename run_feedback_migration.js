@@ -4,7 +4,7 @@ const path = require('path');
 
 // Database connection
 const pool = new Pool({
-    connectionString: 'postgresql://postgres:123mert123@localhost:5000/deneme'
+    connectionString: process.env.DATABASE_URL || 'postgresql://postgres:123mert123@localhost:5000/deneme'
 });
 
 async function runFeedbackMigration() {
