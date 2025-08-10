@@ -1,0 +1,1 @@
+ALTER TABLE treatments ADD COLUMN price NUMERIC(12,2) DEFAULT 0;

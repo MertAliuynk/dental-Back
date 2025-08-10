@@ -109,8 +109,7 @@ const createTreatment = asyncErrorWrapper(async (req, res) => {
       toothNumbers = [],
       isLowerJaw = false,
       isUpperJaw = false,
-      notes,
-      priceCalculation
+      notes
     } = req.body;
 
     // Validasyon
@@ -178,6 +177,44 @@ const createTreatment = asyncErrorWrapper(async (req, res) => {
         .filter(n => Number.isInteger(n) && !isNaN(n) && n > 0);
     }
 
+
+    // --- Fiyatı aktif fiyat listesinden bul ---
+    // 1. Hastanın şubesini bul
+    const patientBranch = await executeQuery('SELECT branch_id FROM patients WHERE patient_id = $1', [patientId]);
+    let branchId = patientBranch[0]?.branch_id;
+    let price = 0;
+    if (branchId) {
+      // 2. Aktif fiyat listesini bul
+      const activePriceList = await executeQuery('SELECT price_list_id FROM price_lists WHERE branch_id = $1 AND is_active = TRUE LIMIT 1', [branchId]);
+      const priceListId = activePriceList[0]?.price_list_id;
+      if (priceListId) {
+        // 3. İlgili tedavi için fiyatı bul
+        const priceItem = await executeQuery('SELECT base_price, lower_jaw_price, upper_jaw_price FROM price_list_items WHERE price_list_id = $1 AND treatment_type_id = $2', [priceListId, treatmentTypeId]);
+        if (priceItem[0]) {
+          // Çene ve diş sayısına göre fiyatı hesapla
+          const base = Number(priceItem[0].base_price) || 0;
+          const upper = Number(priceItem[0].upper_jaw_price) || 0;
+          const lower = Number(priceItem[0].lower_jaw_price) || 0;
+          // Tedavi türü bilgisi (per tooth/jaw)
+          const tt = await executeQuery('SELECT is_per_tooth, is_jaw_specific FROM treatment_types WHERE treatment_type_id = $1', [treatmentTypeId]);
+          const isPerTooth = !!tt[0]?.is_per_tooth;
+          const isJawSpecific = !!tt[0]?.is_jaw_specific;
+          if (isJawSpecific) {
+            let total = 0;
+            if (Boolean(isUpperJaw) && !Boolean(isLowerJaw)) total += upper || base;
+            if (Boolean(isLowerJaw) && !Boolean(isUpperJaw)) total += lower || base;
+            if (Boolean(isUpperJaw) && Boolean(isLowerJaw)) total += (upper || base) + (lower || base);
+            if (!Boolean(isUpperJaw) && !Boolean(isLowerJaw)) total += base;
+            price = total;
+          } else if (isPerTooth) {
+            price = base * (validToothNumbers.length || 1);
+          } else {
+            price = base;
+          }
+        }
+      }
+    }
+
     const treatmentData = {
       patientId,
       treatmentTypeId,
@@ -187,7 +224,8 @@ const createTreatment = asyncErrorWrapper(async (req, res) => {
       toothNumbers: validToothNumbers.length > 0 ? validToothNumbers : null,
       isLowerJaw: Boolean(isLowerJaw),
       isUpperJaw: Boolean(isUpperJaw),
-      notes: notes || null
+      notes: notes || null,
+      price
     };
 
     const query = `
@@ -201,10 +239,11 @@ const createTreatment = asyncErrorWrapper(async (req, res) => {
         is_lower_jaw, 
         is_upper_jaw,
         notes,
+        price,
         suggested_at
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP)
-      RETURNING treatment_id, patient_id, treatment_type_id, doctor_id, status, tooth_count, tooth_numbers, is_lower_jaw, is_upper_jaw, notes, suggested_at, created_at
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, CURRENT_TIMESTAMP)
+      RETURNING treatment_id, patient_id, treatment_type_id, doctor_id, status, tooth_count, tooth_numbers, is_lower_jaw, is_upper_jaw, notes, price, suggested_at, created_at
     `;
 
     const newTreatment = await executeQuery(query, [
@@ -216,7 +255,8 @@ const createTreatment = asyncErrorWrapper(async (req, res) => {
       treatmentData.toothNumbers,
       treatmentData.isLowerJaw,
       treatmentData.isUpperJaw,
-      treatmentData.notes
+      treatmentData.notes,
+      treatmentData.price
     ]);
 
     logger.info(`Yeni tedavi önerisi oluşturuldu: ${newTreatment[0].treatment_id}`);

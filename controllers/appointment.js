@@ -56,9 +56,26 @@ const createAppointment = asyncErrorWrapper(async (req, res, next) => {
       RETURNING appointment_id, patient_id, doctor_id, branch_id, appointment_time, duration_minutes, status, notes, created_at
     `, [patientId, doctorId, finalBranchId, appointmentTime, duration, 'scheduled', notes]);
 
+    // Hasta ve doktor adını da ekle
+    const patientInfo = await executeQuery(
+      'SELECT first_name, last_name FROM patients WHERE patient_id = $1',
+      [patientId]
+    );
+    const doctorInfo = await executeQuery(
+      'SELECT first_name, last_name FROM users WHERE user_id = $1',
+      [doctorId]
+    );
+    const responseData = {
+      ...newAppointment[0],
+      patient_first_name: patientInfo[0]?.first_name || '',
+      patient_last_name: patientInfo[0]?.last_name || '',
+      doctor_first_name: doctorInfo[0]?.first_name || '',
+      doctor_last_name: doctorInfo[0]?.last_name || ''
+    };
+
     res.status(201).json({
       success: true,
-      data: newAppointment[0],
+      data: responseData,
       message: "Randevu başarıyla oluşturuldu"
     });
   } catch (err) {

@@ -8,7 +8,7 @@ async function runMigrations() {
 
     // Elle belirlenmiş migration sırası (bağımlılıklara göre)
     const migrationDir = path.join(__dirname, '../migrations');
-    const allFiles = [
+  const allFiles = [
       '20250728_1_create_branches_table.sql',
       '20250728_2_create_users_table.sql',
       '20250728_3_create_patients_table.sql',
@@ -28,6 +28,8 @@ async function runMigrations() {
       '20250807_2_update_tc_number_length.sql',
       '20250807_3_create_feedback_planning.sql',
       '20250808_1_fix_feedback_trigger.sql',
+  '20250810_1_add_price_to_treatments.sql',
+  '20250810_2_appointments_time_to_timestamptz.sql',
     ];
 
     // Migrations tablosunu önce oluştur (eğer yoksa)
