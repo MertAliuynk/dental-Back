@@ -173,44 +173,38 @@ const sendQuickSms = asyncErrorWrapper(async (req, res, next) => {
       }
     }
     
-    // Burada gerçek SMS gönderme işlemi yapılacak
-    // Her hasta için özelleştirilmiş SMS içeriği oluştur ve gönder
+    // Netgsm ile SMS gönderimi
+    const { sendSmsNetgsm } = require('../helpers/netgsm');
     const sentMessages = [];
-    
     for (const patient of uniquePatients) {
-      // Randevu bilgileri varsa formatla
       let appointmentDate = null;
       let appointmentTime = null;
-      
       if (patient.appointment_time) {
         const appointmentDateTime = new Date(patient.appointment_time);
         appointmentDate = appointmentDateTime.toLocaleDateString('tr-TR');
-        appointmentTime = appointmentDateTime.toLocaleTimeString('tr-TR', { 
-          hour: '2-digit', 
-          minute: '2-digit' 
+        appointmentTime = appointmentDateTime.toLocaleTimeString('tr-TR', {
+          hour: '2-digit',
+          minute: '2-digit'
         });
       }
-      
       const personalizedContent = replacePlaceholders(template.content, patient, {
         appointmentDate: appointmentDate,
         appointmentTime: appointmentTime,
         doctorName: patient.doctor_name,
         branchName: patient.branch_name
       });
-      
-      // Burada gerçek SMS API'si çağırılacak
-      // Şimdilik sadece log'a yazıyoruz
-      logger.info(`SMS gönderiliyor:`, {
-        patient: `${patient.first_name} ${patient.last_name}`,
-        phone: patient.phone,
-        appointmentDate: appointmentDate,
-        appointmentTime: appointmentTime,
-        doctorName: patient.doctor_name,
-        branchName: patient.branch_name,
-        originalContent: template.content,
-        personalizedContent: personalizedContent
-      });
-      
+      let netgsmResult = null;
+      try {
+        netgsmResult = await sendSmsNetgsm({ phone: patient.phone, message: personalizedContent });
+        logger.info(`Netgsm SMS gönderildi:`, {
+          patient: `${patient.first_name} ${patient.last_name}`,
+          phone: patient.phone,
+          netgsmResult
+        });
+      } catch (err) {
+        logger.error('Netgsm SMS gönderim hatası:', err);
+        netgsmResult = { error: err.message };
+      }
       sentMessages.push({
         patientId: patient.patient_id,
         patientName: `${patient.first_name} ${patient.last_name}`,
@@ -221,11 +215,11 @@ const sendQuickSms = asyncErrorWrapper(async (req, res, next) => {
           time: appointmentTime,
           doctor: patient.doctor_name,
           branch: patient.branch_name
-        }
+        },
+        netgsmResult
       });
     }
-    
-    res.status(200).json({ 
+    res.status(200).json({
       message: "SMS başarıyla gönderildi",
       sentCount: uniquePatients.length,
       template: template.name,
