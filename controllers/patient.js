@@ -1,3 +1,19 @@
+// Tüm hastaları şube adı ve oluşturma tarihiyle birlikte dönen fonksiyon
+const { executeQuery } = require("../helpers/db/utils/queryExecutor");
+async function getAllPatientsWithBranch(req, res) {
+  try {
+    const query = `
+      SELECT p.*, b.name AS branch_name
+      FROM patients p
+      LEFT JOIN branches b ON p.branch_id = b.branch_id
+      ORDER BY p.created_at DESC
+    `;
+    const patients = await executeQuery(query);
+    res.json({ success: true, data: patients });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Hasta listesi alınırken hata oluştu.", error: err.message });
+  }
+}
 // Toplu hasta ekle (Hasta Bilgileri zorunlu, Anamnez yok)
 const { createPatient } = require("../helpers/db/queries/patientQueries");
 const { verifyToken } = require("../helpers/auth/jwtHelper");
@@ -25,9 +41,9 @@ async function bulkAddPatients(req, res) {
 
     const results = [];
     for (const p of patients) {
-      const { firstName, lastName, tc, phone, birthDate, doctor } = p;
-      // Sadece eksiksiz satırları ekle
-      if (!firstName || !lastName || !tc || !phone || !birthDate || !doctor) {
+      const { firstName, lastName, tc, phone, birthDate, doctors } = p;
+      // doctors: dizi beklenir (zorunlu)
+      if (!firstName || !lastName || !tc || !phone || !birthDate || !Array.isArray(doctors) || doctors.length === 0) {
         continue;
       }
       const created = await createPatient({
@@ -37,7 +53,7 @@ async function bulkAddPatients(req, res) {
         tcNumber: tc,
         phone,
         birthDate,
-        doctorId: Number(doctor),
+        doctorIds: doctors.map(Number),
         notes: null
       });
       results.push(created);
@@ -63,7 +79,7 @@ async function createPatientWithAnamnesis(req, res) {
       lastName,
       phone,
       tc,
-      doctor,
+      doctors,
       birthDate,
       branchId, // opsiyonel, ileride kullanılabilir
       notes,
@@ -89,8 +105,8 @@ async function createPatientWithAnamnesis(req, res) {
     }
 
     // Zorunlu alan kontrolü
-    if (!firstName || !lastName || !phone || !tc || !doctor || !birthDate) {
-      return res.status(400).json({ success: false, message: "Tüm hasta bilgileri zorunludur." });
+    if (!firstName || !lastName || !phone || !tc || !Array.isArray(doctors) || doctors.length === 0 || !birthDate) {
+      return res.status(400).json({ success: false, message: "Tüm hasta bilgileri ve en az bir doktor zorunludur." });
     }
 
     // createPatient fonksiyonu branchId ve notes opsiyonel, diğerleri zorunlu
@@ -101,7 +117,7 @@ async function createPatientWithAnamnesis(req, res) {
       tcNumber: tc,
       phone,
       birthDate,
-      doctorId: doctor,
+      doctorIds: doctors.map(Number),
       notes: notes || null
     });
 
@@ -147,4 +163,37 @@ async function createPatientWithAnamnesis(req, res) {
   }
 }
 
-module.exports = { createPatientWithAnamnesis, bulkAddPatients };
+const { deletePatient } = require("../helpers/db/queries/patientQueries");
+const { deleteTreatment } = require("../helpers/db/queries/treatmentQueries");
+const { deleteAppointment } = require("../helpers/db/queries/appointmentQueries");
+
+// DELETE /api/patient/:id
+// Hasta silinince ilişkili tedavi ve randeviler de silinir
+async function deletePatientAndRelations(req, res) {
+  try {
+    const patientId = req.params.id;
+    // Tedavileri sil
+    const { executeQuery } = require("../helpers/db/utils/queryExecutor");
+    // Tüm tedavileri bul
+    const treatments = await executeQuery('SELECT treatment_id FROM treatments WHERE patient_id = $1', [patientId]);
+    for (const t of treatments) {
+      await deleteTreatment(t.treatment_id);
+    }
+    // Tüm randevuları bul
+    const appointments = await executeQuery('SELECT appointment_id FROM appointments WHERE patient_id = $1', [patientId]);
+    for (const a of appointments) {
+      await deleteAppointment(a.appointment_id);
+    }
+    // Hastayı sil
+    const deleted = await deletePatient(patientId);
+    if (!deleted) {
+      return res.status(404).json({ success: false, message: "Hasta bulunamadı." });
+    }
+    res.json({ success: true, message: "Hasta ve ilişkili veriler silindi." });
+  } catch (err) {
+    console.error('Hasta silme hatası:', err);
+    res.status(500).json({ success: false, message: "Hasta silinirken hata oluştu.", error: err.message });
+  }
+}
+
+module.exports = { createPatientWithAnamnesis, bulkAddPatients, deletePatientAndRelations, getAllPatientsWithBranch };

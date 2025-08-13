@@ -30,6 +30,7 @@ async function runMigrations() {
       '20250808_1_fix_feedback_trigger.sql',
   '20250810_1_add_price_to_treatments.sql',
   '20250810_2_appointments_time_to_timestamptz.sql',
+  `20250813_1_patient_multi_doctor.sql`
     ];
 
     // Migrations tablosunu önce oluştur (eğer yoksa)

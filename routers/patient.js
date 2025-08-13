@@ -1,21 +1,13 @@
 const express = require("express");
-const { getAllPatients } = require("../helpers/db/queries/patientQueries");
-const { createPatientWithAnamnesis, bulkAddPatients } = require("../controllers/patient");
+const { createPatientWithAnamnesis, bulkAddPatients, getAllPatientsWithBranch } = require("../controllers/patient");
 
 const router = express.Router();
 
 // Toplu hasta ekle (Hasta Bilgileri zorunlu, Anamnez yok)
 router.post("/bulk", bulkAddPatients);
 
-// Tüm hastaları getir
-router.get("/", async (req, res) => {
-  try {
-    const patients = await getAllPatients();
-    res.json({ success: true, data: patients });
-  } catch (err) {
-    res.status(500).json({ success: false, message: "Hasta listesi alınamadı." });
-  }
-});
+// Tüm hastaları getir (şube adı ve oluşturma tarihiyle)
+router.get("/", getAllPatientsWithBranch);
 
 
 // Belirli hastayı getir
@@ -93,8 +85,13 @@ router.put("/:id", async (req, res) => {
   }
 });
 
+
 // Yeni hasta ekle (Hasta Bilgileri zorunlu, Anamnez Bilgileri opsiyonel)
 router.post("/", createPatientWithAnamnesis);
+
+// Hasta sil (ilişkili tedavi ve randeviler de silinir)
+const { deletePatientAndRelations } = require("../controllers/patient");
+router.delete("/:id", deletePatientAndRelations);
 
 // Test endpoint
 router.get("/test", (req, res) => {

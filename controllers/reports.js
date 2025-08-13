@@ -48,25 +48,30 @@ exports.getExaminationReport = async (req, res) => {
       };
     });
     
-    // Doktor bazında sonuçlar
+    // Çoklu doktor desteği: patient_doctors tablosu üzerinden
+    const patientDoctorMap = {};
+    const { getDoctorsByPatientId } = require("../helpers/db/queries/patientDoctorQueries");
+    for (const patient of allPatients) {
+      // Her hasta için doktorları çek (asenkron toplu çekmek için Promise.all kullanılabilir)
+      const doctorsForPatient = await getDoctorsByPatientId(patient.patient_id);
+      patientDoctorMap[patient.patient_id] = doctorsForPatient.map(d => d.user_id);
+    }
+
     const doctorResults = doctors.map(doctor => {
       const counts = days.map(day => {
         const patientCount = allPatients.filter(p =>
-          p.doctor_id === doctor.user_id &&
+          patientDoctorMap[p.patient_id] && patientDoctorMap[p.patient_id].includes(doctor.user_id) &&
           format(new Date(p.created_at), "yyyy-MM-dd") === day
         ).length;
         return patientCount;
       });
-      
       const totalPatients = allPatients.filter(p =>
-        p.doctor_id === doctor.user_id &&
+        patientDoctorMap[p.patient_id] && patientDoctorMap[p.patient_id].includes(doctor.user_id) &&
         new Date(p.created_at) >= startDate &&
         new Date(p.created_at) <= endDate
       ).length;
-      
       // Doktorun şubesini bul
       const doctorBranch = branches.find(b => b.branch_id === doctor.branch_id);
-      
       return {
         doctor_id: doctor.user_id,
         doctor_name: `${doctor.first_name} ${doctor.last_name}`,
@@ -129,24 +134,27 @@ exports.getDoctorAppointmentReport = async (req, res) => {
     }
 
     // Doktor bazında detaylı analiz
+    // Çoklu doktor desteği: patient_doctors tablosu üzerinden
+    const { getDoctorsByPatientId } = require("../helpers/db/queries/patientDoctorQueries");
+    const appointmentPatientDoctorMap = {};
+    for (const appt of filteredAppointments) {
+      const doctorsForPatient = await getDoctorsByPatientId(appt.patient_id);
+      appointmentPatientDoctorMap[appt.appointment_id] = doctorsForPatient.map(d => d.user_id);
+    }
     const doctorResults = doctors.map(doc => {
-      const docAppointments = filteredAppointments.filter(a => a.doctor_id === doc.user_id);
-      
+      const docAppointments = filteredAppointments.filter(a => appointmentPatientDoctorMap[a.appointment_id] && appointmentPatientDoctorMap[a.appointment_id].includes(doc.user_id));
       // Status bazında analiz
       const scheduled = docAppointments.filter(a => a.status === 'scheduled').length;
       const attended = docAppointments.filter(a => a.status === 'attended').length;
       const missed = docAppointments.filter(a => a.status === 'missed').length;
-      
       // Günlük dağılım
       const dailyCounts = days.map(day => {
         return docAppointments.filter(a => 
           format(new Date(a.appointment_time), "yyyy-MM-dd") === day
         ).length;
       });
-
       // Doktorun şubesini bul
       const doctorBranch = branches.find(b => b.branch_id === doc.branch_id);
-      
       return {
         doctor_id: doc.user_id,
         doctor_name: `${doc.first_name} ${doc.last_name}`,
@@ -254,22 +262,24 @@ exports.getTreatmentReport = async (req, res) => {
       .slice(0, 10);
 
     // Doktor bazında analiz
+    // Çoklu doktor desteği: patient_doctors tablosu üzerinden
+    const treatmentPatientDoctorMap = {};
+    for (const t of allTreatments) {
+      const doctorsForPatient = await getDoctorsByPatientId(t.patient_id);
+      treatmentPatientDoctorMap[t.treatment_id] = doctorsForPatient.map(d => d.user_id);
+    }
     const doctorAnalysis = doctors.map(doctor => {
-      const doctorTreatments = allTreatments.filter(t => t.doctor_id === doctor.user_id);
-      
+      const doctorTreatments = allTreatments.filter(t => treatmentPatientDoctorMap[t.treatment_id] && treatmentPatientDoctorMap[t.treatment_id].includes(doctor.user_id));
       // Doktorun şubesini bul
       const doctorBranch = branches.find(b => b.branch_id === doctor.branch_id);
-      
       // Doktorun tedavi türleri
       const doctorTreatmentTypes = {};
       doctorTreatments.forEach(treatment => {
         const typeName = treatment.treatment_type_name || treatment.treatment_name || 'Bilinmeyen Tedavi';
         doctorTreatmentTypes[typeName] = (doctorTreatmentTypes[typeName] || 0) + 1;
       });
-
       const topTreatment = Object.entries(doctorTreatmentTypes)
         .sort(([,a], [,b]) => b - a)[0];
-
       return {
         doctor_id: doctor.user_id,
         doctor_name: `${doctor.first_name} ${doctor.last_name}`,

@@ -1,3 +1,31 @@
+// Şubeye göre doktorları getir (token'dan branch_id alınır)
+async function getDoctorsByBranch(req, res) {
+  try {
+    let branchId = null;
+    // JWT token'dan branch_id al
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      const decoded = require('../helpers/auth/jwtHelper').verifyToken(token);
+      branchId = decoded.branch_id || decoded.branchId;
+    }
+    let doctors;
+    if (branchId) {
+      doctors = await executeQuery(
+        "SELECT user_id, first_name, last_name, branch_id FROM users WHERE role = 'doctor' AND branch_id = $1 ORDER BY first_name, last_name",
+        [branchId]
+      );
+    } else {
+      // branchId yoksa tüm doktorları döndür
+      doctors = await executeQuery(
+        "SELECT user_id, first_name, last_name, branch_id FROM users WHERE role = 'doctor' ORDER BY first_name, last_name"
+      );
+    }
+    res.json({ success: true, data: doctors });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Doktorlar alınamadı.", error: err.message });
+  }
+}
 const { executeQuery } = require("../helpers/db/utils/queryExecutor");
 const bcrypt = require('bcrypt');
 const CustomError = require('../helpers/err/CustomError');
@@ -5,7 +33,8 @@ const CustomError = require('../helpers/err/CustomError');
 // Sadece doktorları getir (ör: role = 'doctor')
 async function getAllDoctors(req, res) {
   try {
-    const doctors = await executeQuery("SELECT user_id, first_name, last_name FROM users WHERE role = 'doctor' ORDER BY first_name, last_name");
+    // branch_id alanını da ekle
+    const doctors = await executeQuery("SELECT user_id, first_name, last_name, branch_id FROM users WHERE role = 'doctor' ORDER BY first_name, last_name");
     res.json({ success: true, data: doctors });
   } catch (err) {
     res.status(500).json({ success: false, message: "Doktorlar alınamadı.", error: err.message });
@@ -176,5 +205,6 @@ module.exports = {
   getAllUsers, 
   createUser, 
   updateUser, 
-  deleteUser 
+  deleteUser,
+  getDoctorsByBranch
 };
