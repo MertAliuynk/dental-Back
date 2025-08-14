@@ -2,14 +2,20 @@
 const { executeQuery } = require("../helpers/db/utils/queryExecutor");
 async function getAllPatientsWithBranch(req, res) {
   try {
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = parseInt(req.query.offset) || 0;
     const query = `
       SELECT p.*, b.name AS branch_name
       FROM patients p
       LEFT JOIN branches b ON p.branch_id = b.branch_id
       ORDER BY p.created_at DESC
+      LIMIT $1 OFFSET $2
     `;
-    const patients = await executeQuery(query);
-    res.json({ success: true, data: patients });
+    const patients = await executeQuery(query, [limit, offset]);
+    // Toplam kayıt sayısı için ek sorgu
+    const countResult = await executeQuery('SELECT COUNT(*) FROM patients');
+    const total = parseInt(countResult[0].count, 10);
+    res.json({ success: true, data: patients, total });
   } catch (err) {
     res.status(500).json({ success: false, message: "Hasta listesi alınırken hata oluştu.", error: err.message });
   }
