@@ -4,16 +4,30 @@ async function getAllPatientsWithBranch(req, res) {
   try {
     const limit = parseInt(req.query.limit) || 20;
     const offset = parseInt(req.query.offset) || 0;
-    const query = `
+    const search = req.query.search ? req.query.search.trim() : "";
+    let query = `
       SELECT p.*, b.name AS branch_name
       FROM patients p
       LEFT JOIN branches b ON p.branch_id = b.branch_id
-      ORDER BY p.created_at DESC
-      LIMIT $1 OFFSET $2
     `;
-    const patients = await executeQuery(query, [limit, offset]);
+    let params = [];
+    let whereClause = "";
+    if (search) {
+      whereClause = `WHERE (p.first_name ILIKE $1 OR p.last_name ILIKE $1 OR p.tc_number ILIKE $1 OR p.phone ILIKE $1)`;
+      params.push(`%${search}%`);
+    }
+    query += whereClause;
+    query += ` ORDER BY p.created_at DESC LIMIT $${params.length+1} OFFSET $${params.length+2}`;
+    params.push(limit, offset);
+    const patients = await executeQuery(query, params);
     // Toplam kayıt sayısı için ek sorgu
-    const countResult = await executeQuery('SELECT COUNT(*) FROM patients');
+    let countQuery = 'SELECT COUNT(*) FROM patients';
+    let countParams = [];
+    if (search) {
+      countQuery += ` WHERE (first_name ILIKE $1 OR last_name ILIKE $1 OR tc_number ILIKE $1 OR phone ILIKE $1)`;
+      countParams.push(`%${search}%`);
+    }
+    const countResult = await executeQuery(countQuery, countParams);
     const total = parseInt(countResult[0].count, 10);
     res.json({ success: true, data: patients, total });
   } catch (err) {
