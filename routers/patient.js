@@ -1,13 +1,4 @@
-// Tüm hasta-doktor ilişkilerini getir
-const { executeQuery } = require("../helpers/db/utils/queryExecutor");
-router.get("/all-doctors-relations", async (req, res) => {
-  try {
-    const rows = await executeQuery("SELECT * FROM patient_doctors");
-    res.json({ success: true, data: rows });
-  } catch (err) {
-    res.status(500).json({ success: false, message: "Hasta-doktor ilişkileri alınamadı.", error: err.message });
-  }
-});
+
 const express = require("express");
 const { createPatientWithAnamnesis, bulkAddPatients, getAllPatientsWithBranch } = require("../controllers/patient");
 
@@ -23,6 +14,18 @@ router.get("/", getAllPatientsWithBranch);
 // Belirli hastayı getir
 const { getPatientById, updatePatient } = require("../helpers/db/queries/patientQueries");
 const { getAnamnesisByPatientId, createAnamnesis, deleteAnamnesisByPatientId } = require("../helpers/db/queries/patientAnamnesisQueries");
+
+// Tüm hasta-doktor ilişkilerini getir
+const { executeQuery } = require("../helpers/db/utils/queryExecutor");
+router.get("/all-doctors-relations", async (req, res) => {
+  try {
+    const rows = await executeQuery("SELECT * FROM patient_doctors");
+    res.json({ success: true, data: rows });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Hasta-doktor ilişkileri alınamadı.", error: err.message });
+  }
+});
+
 router.get("/:id", async (req, res) => {
   try {
     const patient = await getPatientById(req.params.id);
