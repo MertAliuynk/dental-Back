@@ -1,3 +1,13 @@
+// Tüm hasta-doktor ilişkilerini getir
+const { executeQuery } = require("../helpers/db/utils/queryExecutor");
+router.get("/all-doctors-relations", async (req, res) => {
+  try {
+    const rows = await executeQuery("SELECT * FROM patient_doctors");
+    res.json({ success: true, data: rows });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Hasta-doktor ilişkileri alınamadı.", error: err.message });
+  }
+});
 const express = require("express");
 const { createPatientWithAnamnesis, bulkAddPatients, getAllPatientsWithBranch } = require("../controllers/patient");
 
