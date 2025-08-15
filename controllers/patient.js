@@ -73,28 +73,35 @@ async function bulkAddPatients(req, res) {
     }
 
     const results = [];
-    for (const p of patients) {
+    const errorList = [];
+    for (let i = 0; i < patients.length; i++) {
+      const p = patients[i];
       const { firstName, lastName, tc, phone, birthDate, doctors } = p;
       // doctors: dizi beklenir (zorunlu)
       if (!firstName || !lastName || !tc || !phone || !birthDate || !Array.isArray(doctors) || doctors.length === 0) {
+        errorList.push({ index: i + 1, tc, error: "Eksik veya hatalı bilgi" });
         continue;
       }
-      const created = await createPatient({
-        branchId: userBranchId || null,
-        firstName,
-        lastName,
-        tcNumber: tc,
-        phone,
-        birthDate,
-        doctorIds: doctors.map(Number),
-        notes: null
-      });
-      results.push(created);
+      try {
+        const created = await createPatient({
+          branchId: userBranchId || null,
+          firstName,
+          lastName,
+          tcNumber: tc,
+          phone,
+          birthDate,
+          doctorIds: doctors.map(Number),
+          notes: null
+        });
+        results.push(created);
+      } catch (err) {
+        errorList.push({ index: i + 1, tc, error: err.message });
+      }
     }
     if (results.length === 0) {
-      return res.status(400).json({ success: false, message: "En az bir geçerli hasta bilgisi girilmelidir." });
+      return res.status(400).json({ success: false, message: "En az bir geçerli hasta bilgisi girilmelidir.", errors: errorList });
     }
-    res.status(201).json({ success: true, data: results });
+    res.status(201).json({ success: true, data: results, errors: errorList });
   } catch (err) {
     console.error('Toplu hasta ekleme hatası:', err);
     res.status(500).json({ success: false, message: "Toplu hasta ekleme sırasında hata oluştu.", error: err.message });
