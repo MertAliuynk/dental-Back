@@ -2,9 +2,13 @@
 const { executeQuery } = require("../helpers/db/utils/queryExecutor");
 async function getAllPatientsWithBranch(req, res) {
   try {
-    const limit = parseInt(req.query.limit) || 20;
-    const offset = parseInt(req.query.offset) || 0;
-    const search = req.query.search ? req.query.search.trim() : "";
+  const limit = parseInt(req.query.limit) || 20;
+  const offset = parseInt(req.query.offset) || 0;
+  const search = req.query.search ? req.query.search.trim() : "";
+  // Sıralama parametreleri
+  const allowedOrderBy = ["first_name", "last_name", "created_at", "tc_number", "phone", "branch_name"];
+  const orderBy = allowedOrderBy.includes(req.query.orderBy) ? req.query.orderBy : "created_at";
+  const order = req.query.order === "asc" ? "ASC" : "DESC";
     let query = `
       SELECT p.*, b.name AS branch_name
       FROM patients p
@@ -17,7 +21,9 @@ async function getAllPatientsWithBranch(req, res) {
       params.push(`%${search}%`);
     }
     query += whereClause;
-    query += ` ORDER BY p.created_at DESC LIMIT $${params.length+1} OFFSET $${params.length+2}`;
+    // Dinamik sıralama
+    let orderBySql = orderBy === "branch_name" ? "b.name" : `p.${orderBy}`;
+    query += ` ORDER BY ${orderBySql} ${order} LIMIT $${params.length+1} OFFSET $${params.length+2}`;
     params.push(limit, offset);
     const patients = await executeQuery(query, params);
     // Toplam kayıt sayısı için ek sorgu
