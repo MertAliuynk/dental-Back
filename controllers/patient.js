@@ -24,9 +24,9 @@ async function getAllPatientsWithBranch(req, res) {
     // Dinamik ve Türkçe/boşluk duyarlı sıralama
     let orderBySql;
     if (orderBy === "first_name" || orderBy === "last_name") {
-      orderBySql = `TRIM(LOWER(p.${orderBy})) COLLATE "tr_TR"`;
+  orderBySql = `TRIM(LOWER(p.${orderBy}))`;
     } else if (orderBy === "branch_name") {
-      orderBySql = `TRIM(LOWER(b.name)) COLLATE "tr_TR"`;
+  orderBySql = `TRIM(LOWER(b.name))`;
     } else {
       orderBySql = `p.${orderBy}`;
     }
