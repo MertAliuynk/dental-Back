@@ -21,8 +21,15 @@ async function getAllPatientsWithBranch(req, res) {
       params.push(`%${search}%`);
     }
     query += whereClause;
-    // Dinamik sıralama
-    let orderBySql = orderBy === "branch_name" ? "b.name" : `p.${orderBy}`;
+    // Dinamik ve Türkçe/boşluk duyarlı sıralama
+    let orderBySql;
+    if (orderBy === "first_name" || orderBy === "last_name") {
+      orderBySql = `TRIM(LOWER(p.${orderBy})) COLLATE "tr_TR"`;
+    } else if (orderBy === "branch_name") {
+      orderBySql = `TRIM(LOWER(b.name)) COLLATE "tr_TR"`;
+    } else {
+      orderBySql = `p.${orderBy}`;
+    }
     query += ` ORDER BY ${orderBySql} ${order} LIMIT $${params.length+1} OFFSET $${params.length+2}`;
     params.push(limit, offset);
     const patients = await executeQuery(query, params);

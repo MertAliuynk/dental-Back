@@ -7,6 +7,7 @@ const cookieParser = require("cookie-parser");
 const path = require("path");
 const runMigrations = require("./helpers/db/scripts/runMigrations");
 const ensureAdminUser = require("./helpers/db/scripts/ensureAdminUser");
+require('./scheduledSmsSender');
 
 dotenv.config({
     path : "./config/env/.env"
