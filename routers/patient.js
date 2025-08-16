@@ -1,3 +1,24 @@
+// Sadece hasta notunu güncelle
+router.patch('/:id/notes', async (req, res) => {
+  try {
+    const patientId = req.params.id;
+    const { notes } = req.body;
+    if (typeof notes !== 'string') {
+      return res.status(400).json({ success: false, message: 'Not alanı zorunludur.' });
+    }
+    const updated = await executeQuery(
+      'UPDATE patients SET notes = $1, updated_at = CURRENT_TIMESTAMP WHERE patient_id = $2 RETURNING *',
+      [notes, patientId],
+      { returnSingle: true }
+    );
+    if (!updated) {
+      return res.status(404).json({ success: false, message: 'Hasta bulunamadı.' });
+    }
+    res.json({ success: true, data: updated, message: 'Not güncellendi.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Sunucu hatası.' });
+  }
+});
 
 const express = require("express");
 const { createPatientWithAnamnesis, bulkAddPatients, getAllPatientsWithBranch } = require("../controllers/patient");
