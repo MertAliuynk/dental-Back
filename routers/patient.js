@@ -1,3 +1,8 @@
+
+const express = require("express");
+const { createPatientWithAnamnesis, bulkAddPatients, getAllPatientsWithBranch } = require("../controllers/patient");
+
+const router = express.Router();
 // Sadece hasta notunu güncelle
 router.patch('/:id/notes', async (req, res) => {
   try {
@@ -19,11 +24,6 @@ router.patch('/:id/notes', async (req, res) => {
     res.status(500).json({ success: false, message: 'Sunucu hatası.' });
   }
 });
-
-const express = require("express");
-const { createPatientWithAnamnesis, bulkAddPatients, getAllPatientsWithBranch } = require("../controllers/patient");
-
-const router = express.Router();
 
 // Toplu hasta ekle (Hasta Bilgileri zorunlu, Anamnez yok)
 router.post("/bulk", bulkAddPatients);
