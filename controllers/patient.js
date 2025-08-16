@@ -5,6 +5,7 @@ async function getAllPatientsWithBranch(req, res) {
   const limit = parseInt(req.query.limit) || 20;
   const offset = parseInt(req.query.offset) || 0;
   const search = req.query.search ? req.query.search.trim() : "";
+  const branch_id = req.query.branch_id ? req.query.branch_id : null;
   // Sıralama parametreleri
   const allowedOrderBy = ["first_name", "last_name", "created_at", "tc_number", "phone", "branch_name"];
   const orderBy = allowedOrderBy.includes(req.query.orderBy) ? req.query.orderBy : "created_at";
@@ -16,11 +17,18 @@ async function getAllPatientsWithBranch(req, res) {
     `;
     let params = [];
     let whereClause = "";
+    let whereParts = [];
     if (search) {
-      whereClause = `WHERE (p.first_name ILIKE $1 OR p.last_name ILIKE $1 OR p.tc_number ILIKE $1 OR p.phone ILIKE $1)`;
+      whereParts.push(`(p.first_name ILIKE $${params.length+1} OR p.last_name ILIKE $${params.length+1} OR p.tc_number ILIKE $${params.length+1} OR p.phone ILIKE $${params.length+1})`);
       params.push(`%${search}%`);
     }
-    query += whereClause;
+    if (branch_id) {
+      whereParts.push(`p.branch_id = $${params.length+1}`);
+      params.push(branch_id);
+    }
+    if (whereParts.length > 0) {
+      query += ' WHERE ' + whereParts.join(' AND ');
+    }
     // Dinamik ve Türkçe/boşluk duyarlı sıralama
     let orderBySql;
     if (orderBy === "first_name" || orderBy === "last_name") {
@@ -36,9 +44,17 @@ async function getAllPatientsWithBranch(req, res) {
     // Toplam kayıt sayısı için ek sorgu
     let countQuery = 'SELECT COUNT(*) FROM patients';
     let countParams = [];
+    let countWhereParts = [];
     if (search) {
-      countQuery += ` WHERE (first_name ILIKE $1 OR last_name ILIKE $1 OR tc_number ILIKE $1 OR phone ILIKE $1)`;
+      countWhereParts.push(`(first_name ILIKE $${countParams.length+1} OR last_name ILIKE $${countParams.length+1} OR tc_number ILIKE $${countParams.length+1} OR phone ILIKE $${countParams.length+1})`);
       countParams.push(`%${search}%`);
+    }
+    if (branch_id) {
+      countWhereParts.push(`branch_id = $${countParams.length+1}`);
+      countParams.push(branch_id);
+    }
+    if (countWhereParts.length > 0) {
+      countQuery += ' WHERE ' + countWhereParts.join(' AND ');
     }
     const countResult = await executeQuery(countQuery, countParams);
     const total = parseInt(countResult[0].count, 10);
