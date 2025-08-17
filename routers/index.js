@@ -1,3 +1,4 @@
+const patientNotesRouter = require("./patientNotes.js");
 const express = require('express');
 const adminRouter = require("./admin.js");
 const userRouter = require("./user.js");
@@ -17,6 +18,7 @@ const priceListRouter = require("./priceList.js");
 
 const router = express.Router();
 
+router.use("/patient-notes", patientNotesRouter);
 router.use("/admin", adminRouter);
 router.use("/user", userRouter);
 router.use("/auth", authRouter);
