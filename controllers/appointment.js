@@ -98,7 +98,8 @@ const getAppointments = asyncErrorWrapper(async (req, res, next) => {
     // Sadece ilgili hastanın randevuları
     appointments = await executeQuery(`
       SELECT a.*, u.first_name AS doctor_first_name, u.last_name AS doctor_last_name,
-        p.first_name || ' ' || p.last_name as patient_name
+        p.first_name || ' ' || p.last_name as patient_name,
+        p.phone as patient_phone
       FROM appointments a
       LEFT JOIN users u ON a.doctor_id = u.user_id
       LEFT JOIN patients p ON a.patient_id = p.patient_id
@@ -109,7 +110,8 @@ const getAppointments = asyncErrorWrapper(async (req, res, next) => {
     // Tarih aralığına göre randevular - doktor filtresi ile
     let query = `
       SELECT a.*, u.first_name AS doctor_first_name, u.last_name AS doctor_last_name,
-             p.first_name || ' ' || p.last_name as patient_name
+             p.first_name || ' ' || p.last_name as patient_name,
+             p.phone as patient_phone
       FROM appointments a
       LEFT JOIN users u ON a.doctor_id = u.user_id
       LEFT JOIN patients p ON a.patient_id = p.patient_id
@@ -130,7 +132,8 @@ const getAppointments = asyncErrorWrapper(async (req, res, next) => {
     // Belirli şube, doktor ve tarih için randevular
     appointments = await executeQuery(`
       SELECT a.*, u.first_name AS doctor_first_name, u.last_name AS doctor_last_name,
-             p.first_name || ' ' || p.last_name as patient_name
+             p.first_name || ' ' || p.last_name as patient_name,
+             p.phone as patient_phone
       FROM appointments a
       LEFT JOIN users u ON a.doctor_id = u.user_id
       LEFT JOIN patients p ON a.patient_id = p.patient_id
@@ -141,7 +144,8 @@ const getAppointments = asyncErrorWrapper(async (req, res, next) => {
     // Belirli şube ve tarih için tüm randevular
     appointments = await executeQuery(`
       SELECT a.*, u.first_name AS doctor_first_name, u.last_name AS doctor_last_name,
-             p.first_name || ' ' || p.last_name as patient_name
+             p.first_name || ' ' || p.last_name as patient_name,
+             p.phone as patient_phone
       FROM appointments a
       LEFT JOIN users u ON a.doctor_id = u.user_id
       LEFT JOIN patients p ON a.patient_id = p.patient_id
@@ -152,7 +156,8 @@ const getAppointments = asyncErrorWrapper(async (req, res, next) => {
     // Sadece belirli doktorun randevuları (tarih filtresi olmadan)
     appointments = await executeQuery(`
       SELECT a.*, u.first_name AS doctor_first_name, u.last_name AS doctor_last_name,
-             p.first_name || ' ' || p.last_name as patient_name
+             p.first_name || ' ' || p.last_name as patient_name,
+             p.phone as patient_phone
       FROM appointments a
       LEFT JOIN users u ON a.doctor_id = u.user_id
       LEFT JOIN patients p ON a.patient_id = p.patient_id
