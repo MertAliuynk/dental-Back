@@ -95,7 +95,8 @@ async function getAllAppointments() {
   // Doktor adını da döndür
   const query = `
     SELECT a.*, u.first_name AS doctor_first_name, u.last_name AS doctor_last_name,
-           p.first_name || ' ' || p.last_name as patient_name
+           p.first_name || ' ' || p.last_name as patient_name,
+           p.phone as patient_phone
     FROM appointments a
     LEFT JOIN users u ON a.doctor_id = u.user_id
     LEFT JOIN patients p ON a.patient_id = p.patient_id
