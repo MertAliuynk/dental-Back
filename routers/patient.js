@@ -24,7 +24,35 @@ router.patch('/:id/notes', async (req, res) => {
     res.status(500).json({ success: false, message: 'Sunucu hatası.' });
   }
 });
+// Hasta doktor ilişkilerini sil
+router.delete('/:id/doctors', async (req, res) => {
+  try {
+    const patientId = req.params.id;
+    await executeQuery('DELETE FROM patient_doctors WHERE patient_id = $1', [patientId]);
+    res.json({ success: true, message: 'Hasta doktor ilişkileri silindi.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Doktor ilişkileri silinemedi.', error: err.message });
+  }
+});
 
+// Hasta doktor ilişkilerini ekle
+router.post('/:id/doctors', async (req, res) => {
+  try {
+    const patientId = req.params.id;
+    const { doctorIds } = req.body;
+    if (!Array.isArray(doctorIds) || doctorIds.length === 0) {
+      return res.status(400).json({ success: false, message: 'En az bir doktor ID gerekli.' });
+    }
+    // Önce sil, sonra ekle
+    await executeQuery('DELETE FROM patient_doctors WHERE patient_id = $1', [patientId]);
+    for (const doctorId of doctorIds) {
+      await executeQuery('INSERT INTO patient_doctors (patient_id, doctor_id) VALUES ($1, $2)', [patientId, doctorId]);
+    }
+    res.json({ success: true, message: 'Hasta doktor ilişkileri güncellendi.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Doktor ilişkileri eklenemedi.', error: err.message });
+  }
+});
 // Toplu hasta ekle (Hasta Bilgileri zorunlu, Anamnez yok)
 router.post("/bulk", bulkAddPatients);
 
