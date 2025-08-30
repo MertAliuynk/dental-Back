@@ -53,6 +53,8 @@ router.post('/:id/doctors', async (req, res) => {
     res.status(500).json({ success: false, message: 'Doktor ilişkileri eklenemedi.', error: err.message });
   }
 });
+
+
 // Toplu hasta ekle (Hasta Bilgileri zorunlu, Anamnez yok)
 router.post("/bulk", bulkAddPatients);
 
