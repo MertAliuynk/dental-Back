@@ -1,4 +1,5 @@
 const doctorOrderRouter = require("./doctorOrder.js");
+const patientNotesRouter = require("./patientNotes.js");
 const express = require('express');
 const adminRouter = require("./admin.js");
 const userRouter = require("./user.js");
