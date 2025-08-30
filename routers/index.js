@@ -1,4 +1,4 @@
-const patientNotesRouter = require("./patientNotes.js");
+const doctorOrderRouter = require("./doctorOrder.js");
 const express = require('express');
 const adminRouter = require("./admin.js");
 const userRouter = require("./user.js");
@@ -35,6 +35,8 @@ router.use("/treatment/patient", treatmentPatientRouter);
 router.use("/treatment", treatmentRouter);
 router.use("/sms", smsRouter);
 router.use("/price-list", priceListRouter);    // Yeni eklendi
+
+router.use("/doctor-order", doctorOrderRouter);
 
 
 

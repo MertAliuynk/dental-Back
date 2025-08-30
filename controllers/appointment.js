@@ -250,14 +250,12 @@ const updateAppointmentTimeAndDuration = asyncErrorWrapper(async (req, res, next
   }
 
   try {
-    // Hem appointment_time hem de duration ve doktor güncelle
+    // Hem appointment_time hem de duration güncelle
     const updateData = { appointmentTime };
     if (duration) {
       updateData.duration = duration;
     }
-    if (req.body.doctorId) {
-      updateData.doctorId = req.body.doctorId;
-    }
+    
     console.log('Calling updateAppointment with:', { appointmentId, updateData });
     const updated = await updateAppointment(appointmentId, updateData);
     
