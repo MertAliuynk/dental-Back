@@ -5,13 +5,13 @@ const { executeQuery } = require('../helpers/db/utils/queryExecutor');
 
 // Yeni randevu oluştur
 const createAppointment = asyncErrorWrapper(async (req, res, next) => {
-  const { patientId, doctorId, appointmentTime, duration = 30, notes = '', branchId } = req.body;
+  const { patientId, doctorId, appointmentTime, duration = 30, notes = '', branchId, status } = req.body;
 
   // Validasyon
-  if (!patientId || !doctorId || !appointmentTime) {
+  if (!doctorId || !appointmentTime) {
     return res.status(400).json({
       success: false,
-      message: "Hasta, doktor ve randevu zamanı gereklidir"
+      message: "Doktor ve randevu zamanı gereklidir"
     });
   }
 
@@ -39,7 +39,7 @@ const createAppointment = asyncErrorWrapper(async (req, res, next) => {
 
     // Hasta branch_id'sini al (eğer branchId gönderilmediyse)
     let finalBranchId = branchId;
-    if (!finalBranchId) {
+    if (!finalBranchId && patientId) {
       const patientBranch = await executeQuery(
         "SELECT branch_id FROM patients WHERE patient_id = $1", 
         [patientId]
@@ -49,18 +49,23 @@ const createAppointment = asyncErrorWrapper(async (req, res, next) => {
       }
     }
 
+    // Status kontrolü: missed ise missed, yoksa scheduled
+    const appointmentStatus = status === 'missed' ? 'missed' : 'scheduled';
     // Randevu oluştur
     const newAppointment = await executeQuery(`
       INSERT INTO appointments (patient_id, doctor_id, branch_id, appointment_time, duration_minutes, status, notes)
       VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING appointment_id, patient_id, doctor_id, branch_id, appointment_time, duration_minutes, status, notes, created_at
-    `, [patientId, doctorId, finalBranchId, appointmentTime, duration, 'scheduled', notes]);
+    `, [patientId || null, doctorId, finalBranchId, appointmentTime, duration, appointmentStatus, notes]);
 
     // Hasta ve doktor adını da ekle
-    const patientInfo = await executeQuery(
-      'SELECT first_name, last_name FROM patients WHERE patient_id = $1',
-      [patientId]
-    );
+    let patientInfo = [{}];
+    if (patientId) {
+      patientInfo = await executeQuery(
+        'SELECT first_name, last_name FROM patients WHERE patient_id = $1',
+        [patientId]
+      );
+    }
     const doctorInfo = await executeQuery(
       'SELECT first_name, last_name FROM users WHERE user_id = $1',
       [doctorId]
