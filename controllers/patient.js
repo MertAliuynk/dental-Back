@@ -19,7 +19,13 @@ async function getAllPatientsWithBranch(req, res) {
     let whereClause = "";
     let whereParts = [];
     if (search) {
-      whereParts.push(`(p.first_name ILIKE $${params.length+1} OR p.last_name ILIKE $${params.length+1} OR p.tc_number ILIKE $${params.length+1} OR p.phone ILIKE $${params.length+1})`);
+      whereParts.push(`(
+        p.first_name ILIKE $${params.length+1}
+        OR p.last_name ILIKE $${params.length+1}
+        OR TRIM(p.first_name || ' ' || p.last_name) ILIKE $${params.length+1}
+        OR p.tc_number ILIKE $${params.length+1}
+        OR p.phone ILIKE $${params.length+1}
+      )`);
       params.push(`%${search}%`);
     }
     if (branch_id) {
@@ -46,7 +52,13 @@ async function getAllPatientsWithBranch(req, res) {
     let countParams = [];
     let countWhereParts = [];
     if (search) {
-      countWhereParts.push(`(first_name ILIKE $${countParams.length+1} OR last_name ILIKE $${countParams.length+1} OR tc_number ILIKE $${countParams.length+1} OR phone ILIKE $${countParams.length+1})`);
+      countWhereParts.push(`(
+        first_name ILIKE $${countParams.length+1}
+        OR last_name ILIKE $${countParams.length+1}
+        OR TRIM(first_name || ' ' || last_name) ILIKE $${countParams.length+1}
+        OR tc_number ILIKE $${countParams.length+1}
+        OR phone ILIKE $${countParams.length+1}
+      )`);
       countParams.push(`%${search}%`);
     }
     if (branch_id) {

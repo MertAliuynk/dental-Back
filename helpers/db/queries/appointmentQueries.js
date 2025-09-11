@@ -55,7 +55,7 @@ async function updateAppointment(appointmentId, data) {
       appointment_time: data.appointmentTime || current.appointment_time,
       duration_minutes: data.duration || current.duration_minutes,
       status: data.status || current.status,
-      notes: data.notes !== undefined ? data.notes : current.notes
+      notes: (data.notes !== undefined && data.notes !== "") ? data.notes : current.notes
     };
 
     // Duration validation
