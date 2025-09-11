@@ -162,7 +162,7 @@ const getAppointments = asyncErrorWrapper(async (req, res, next) => {
   
   // Status Türkçeleştirme
   const statusMap = {
-    scheduled: 'Planlandı',
+    scheduled: 'Bekleniyor',
     attended: 'Geldi',
     missed: 'Gelmedi',
     cancelled: 'İptal',
