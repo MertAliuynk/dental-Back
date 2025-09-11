@@ -326,7 +326,7 @@ const updateAppointmentStatus = asyncErrorWrapper(async (req, res, next) => {
   }
 
   // Geçerli durum değerleri
-  const validStatuses = ['scheduled', 'attended', 'missed', 'cancelled', 'postponed'];
+  const validStatuses = ['scheduled', 'attended', 'missed', 'cancelled', 'ertelendi'];
   if (!validStatuses.includes(status)) {
     return res.status(400).json({ success: false, message: "Geçersiz durum değeri" });
   }
