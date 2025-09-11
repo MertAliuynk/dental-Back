@@ -32,7 +32,8 @@ async function runMigrations() {
   '20250810_2_appointments_time_to_timestamptz.sql',
   `20250813_1_patient_multi_doctor.sql`,
     '20250818_1_create_patient_notes_table.sql',
-    '20250830_1_create_doctor_order_table.sql'
+    '20250830_1_create_doctor_order_table.sql',
+    "20250911_1_update_appointments_status_constraint.sql"
     ];
 
     // Migrations tablosunu önce oluştur (eğer yoksa)

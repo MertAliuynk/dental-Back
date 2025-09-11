@@ -211,6 +211,19 @@ async function createPatientWithAnamnesis(req, res) {
           });
         }
       }
+
+      // hastaliklar (çoklu seçim) için her birini ayrı kaydet
+      if (Array.isArray(anamnez.hastaliklar) && anamnez.hastaliklar.length > 0) {
+        for (const disease of anamnez.hastaliklar) {
+          await createAnamnesis({
+            patientId: patient.patient_id,
+            question: "Hastalık (listeden seçilen)",
+            answerType: "text",
+            answerText: disease,
+            answerBoolean: null
+          });
+        }
+      }
     }
 
     res.status(201).json({ success: true, data: patient });

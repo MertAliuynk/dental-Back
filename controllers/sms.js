@@ -109,27 +109,71 @@ const deleteSmsTemplate = asyncErrorWrapper(async (req, res, next) => {
   }
 });
 
-// Hızlı SMS gönder
+// Hızlı SMS gönder (şablonlu veya custom mesaj destekli)
 const sendQuickSms = asyncErrorWrapper(async (req, res, next) => {
-  const { patientIds, templateId } = req.body;
-  
+  const { patientIds, templateId, customMessage, phone } = req.body;
   if (!patientIds || !Array.isArray(patientIds) || patientIds.length === 0) {
     return next(new CustomError("En az bir hasta seçilmelidir", 400));
   }
-  
+
+  // Eğer customMessage varsa, serbest metin SMS gönder
+  if (customMessage) {
+    try {
+      const { sendSmsNetgsm } = require('../helpers/netgsm');
+      const sentMessages = [];
+      for (let i = 0; i < patientIds.length; i++) {
+        // Eğer phone parametresi varsa onu kullan, yoksa hastayı DB'den çek
+        let targetPhone = phone;
+        let patient = null;
+        if (!targetPhone) {
+          const patientQuery = 'SELECT * FROM patients WHERE patient_id = $1';
+          const patientData = await executeQuery(patientQuery, [patientIds[i]], { returnSingle: true });
+          if (!patientData || !patientData.phone) continue;
+          targetPhone = patientData.phone;
+          patient = patientData;
+        }
+        let netgsmResult = null;
+        try {
+          netgsmResult = await sendSmsNetgsm({ phone: targetPhone, message: customMessage });
+          logger.info(`Netgsm SMS gönderildi (custom):`, {
+            patient: patient ? `${patient.first_name} ${patient.last_name}` : patientIds[i],
+            phone: targetPhone,
+            netgsmResult
+          });
+        } catch (err) {
+          logger.error('Netgsm SMS gönderim hatası:', err);
+          netgsmResult = { error: err.message };
+        }
+        sentMessages.push({
+          patientId: patientIds[i],
+          phone: targetPhone,
+          content: customMessage,
+          netgsmResult
+        });
+      }
+      res.status(200).json({
+        message: "SMS başarıyla gönderildi (custom)",
+        sentCount: sentMessages.length,
+        sentMessages
+      });
+    } catch (error) {
+      logger.error('Custom SMS gönderme hatası:', error);
+      return next(new CustomError("Custom SMS gönderilemedi", 500));
+    }
+    return;
+  }
+
+  // Şablonlu SMS gönder (orijinal mantık)
   if (!templateId) {
     return next(new CustomError("SMS şablonu seçilmelidir", 400));
   }
-  
   try {
     // Şablonu getir
     const templateQuery = 'SELECT * FROM sms_templates WHERE template_id = $1';
     const template = await executeQuery(templateQuery, [templateId], { returnSingle: true });
-    
     if (!template) {
       return next(new CustomError("SMS şablonu bulunamadı", 404));
     }
-    
     // Hastaları ve randevu bilgilerini getir
     const patientsQuery = `
       SELECT 
@@ -147,15 +191,12 @@ const sendQuickSms = asyncErrorWrapper(async (req, res, next) => {
       ORDER BY p.patient_id, a.appointment_time ASC
     `;
     const patientsWithAppointments = await executeQuery(patientsQuery, [patientIds]);
-    
     if (patientsWithAppointments.length === 0) {
       return next(new CustomError("Geçerli telefon numarası olan hasta bulunamadı", 400));
     }
-    
     // Her hasta için en yakın randevuyu al (eğer varsa)
     const uniquePatients = [];
     const seenPatients = new Set();
-    
     for (const row of patientsWithAppointments) {
       if (!seenPatients.has(row.patient_id)) {
         seenPatients.add(row.patient_id);
@@ -172,7 +213,6 @@ const sendQuickSms = asyncErrorWrapper(async (req, res, next) => {
         });
       }
     }
-    
     // Netgsm ile SMS gönderimi
     const { sendSmsNetgsm } = require('../helpers/netgsm');
     const sentMessages = [];

@@ -16,26 +16,7 @@ const createAppointment = asyncErrorWrapper(async (req, res, next) => {
   }
 
   try {
-    // Randevu çakışma kontrolü
-    const conflictCheck = await executeQuery(`
-      SELECT appointment_id 
-      FROM appointments 
-      WHERE doctor_id = $1 
-      AND (
-        (appointment_time <= $2 AND appointment_time + INTERVAL '1 minute' * duration_minutes > $2)
-        OR 
-        (appointment_time < $3 AND appointment_time + INTERVAL '1 minute' * duration_minutes >= $3)
-        OR
-        (appointment_time >= $2 AND appointment_time < $3)
-      )
-    `, [doctorId, appointmentTime, new Date(new Date(appointmentTime).getTime() + duration * 60000).toISOString()]);
-
-    if (conflictCheck.length > 0) {
-      return res.status(409).json({
-        success: false,
-        message: "Bu zaman diliminde doktorun başka bir randevusu bulunmaktadır"
-      });
-    }
+  // Çakışma kontrolü kaldırıldı, aynı doktora aynı saate birden fazla randevu eklenebilir.
 
     // Hasta branch_id'sini al (eğer branchId gönderilmediyse)
     let finalBranchId = branchId;
@@ -229,50 +210,34 @@ const updateAppointmentTime = asyncErrorWrapper(async (req, res, next) => {
 // Drag & Drop için hem saat hem süre güncelleme
 const updateAppointmentTimeAndDuration = asyncErrorWrapper(async (req, res, next) => {
   let appointmentId = req.params.id;
-  const { appointmentTime, duration } = req.body;
+  const { appointmentTime, duration, doctorId } = req.body;
   appointmentId = parseInt(appointmentId, 10);
-  
-  console.log('Update request received:', {
-    appointmentId,
-    appointmentTime,
-    duration,
-    body: req.body
-  });
-  
+
   if (!appointmentId || isNaN(appointmentId)) {
-    console.log('Invalid appointment ID:', appointmentId);
     return res.status(400).json({ success: false, message: "Geçersiz randevu ID" });
   }
-  
   if (!appointmentTime) {
-    console.log('Invalid appointment time:', appointmentTime);
     return res.status(400).json({ success: false, message: "Geçersiz randevu saati" });
   }
-  
   if (duration && (duration < 15 || duration % 15 !== 0)) {
-    console.log('Invalid duration:', duration);
     return res.status(400).json({ success: false, message: "Süre 15'in katı ve en az 15 olmalı" });
   }
 
   try {
-    // Hem appointment_time hem de duration güncelle
+    // appointment_time, duration ve doctorId güncelle
     const updateData = { appointmentTime };
     if (duration) {
       updateData.duration = duration;
     }
-    
-    console.log('Calling updateAppointment with:', { appointmentId, updateData });
+    if (doctorId !== undefined) {
+      updateData.doctorId = doctorId;
+    }
     const updated = await updateAppointment(appointmentId, updateData);
-    
     if (!updated) {
-      console.log('Appointment not found:', appointmentId);
       return res.status(404).json({ success: false, message: "Randevu bulunamadı" });
     }
-    
-    console.log('Appointment updated successfully:', updated);
     res.json({ success: true, data: updated });
   } catch (error) {
-    console.error('Update appointment error:', error);
     res.status(500).json({ success: false, message: error.message || "Randevu güncellenirken hata oluştu" });
   }
 });
