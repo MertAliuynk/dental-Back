@@ -232,9 +232,9 @@ exports.getTreatmentReport = async (req, res) => {
     const branches = await branchQueries.getAllBranches();
     
     // Status bazında analiz
-    const suggestedTreatments = allTreatments.filter(t => t.status === 'önerilen');
-    const approvedTreatments = allTreatments.filter(t => t.status === 'onaylanan');
-    const completedTreatments = allTreatments.filter(t => t.status === 'tamamlanan');
+    const suggestedTreatments = allTreatments.filter(t => t.status === 'suggested');
+    const approvedTreatments = allTreatments.filter(t => t.status === 'approved');
+    const completedTreatments = allTreatments.filter(t => t.status === 'completed');
 
     // Tedavi türleri bazında analiz
     const treatmentTypeAnalysis = {};
@@ -250,9 +250,9 @@ exports.getTreatmentReport = async (req, res) => {
       }
       
       treatmentTypeAnalysis[typeName].total++;
-      if (treatment.status === 'önerilen') treatmentTypeAnalysis[typeName].suggested++;
-      if (treatment.status === 'onaylanan') treatmentTypeAnalysis[typeName].approved++;
-      if (treatment.status === 'tamamlanan') treatmentTypeAnalysis[typeName].completed++;
+      if (treatment.status === 'suggested') treatmentTypeAnalysis[typeName].suggested++;
+      if (treatment.status === 'approved') treatmentTypeAnalysis[typeName].approved++;
+      if (treatment.status === 'completed') treatmentTypeAnalysis[typeName].completed++;
     });
 
     // En çok uygulanan tedaviler (top 10)
@@ -286,14 +286,14 @@ exports.getTreatmentReport = async (req, res) => {
         branch_id: doctor.branch_id,
         branch_name: doctorBranch ? doctorBranch.name : 'Bilinmeyen Şube',
         total_treatments: doctorTreatments.length,
-        suggested_treatments: doctorTreatments.filter(t => t.status === 'önerilen').length,
-        approved_treatments: doctorTreatments.filter(t => t.status === 'onaylanan').length,
-        completed_treatments: doctorTreatments.filter(t => t.status === 'tamamlanan').length,
-        approval_rate: doctorTreatments.length > 0 
-          ? ((doctorTreatments.filter(t => t.status === 'onaylanan' || t.status === 'tamamlanan').length / doctorTreatments.length) * 100).toFixed(1)
+        suggested_treatments: doctorTreatments.filter(t => t.status === 'suggested').length,
+        approved_treatments: doctorTreatments.filter(t => t.status === 'approved').length,
+        completed_treatments: doctorTreatments.filter(t => t.status === 'completed').length,
+        approval_rate: doctorTreatments.length > 0
+          ? ((doctorTreatments.filter(t => t.status === 'approved' || t.status === 'completed').length / doctorTreatments.length) * 100).toFixed(1)
           : "0",
-        completion_rate: doctorTreatments.filter(t => t.status === 'onaylanan' || t.status === 'tamamlanan').length > 0
-          ? ((doctorTreatments.filter(t => t.status === 'tamamlanan').length / doctorTreatments.filter(t => t.status === 'onaylanan' || t.status === 'tamamlanan').length) * 100).toFixed(1)
+        completion_rate: doctorTreatments.filter(t => t.status === 'approved' || t.status === 'completed').length > 0
+          ? ((doctorTreatments.filter(t => t.status === 'completed').length / doctorTreatments.filter(t => t.status === 'approved' || t.status === 'completed').length) * 100).toFixed(1)
           : "0",
         most_used_treatment: topTreatment ? topTreatment[0] : 'Yok',
         most_used_count: topTreatment ? topTreatment[1] : 0
@@ -311,9 +311,9 @@ exports.getTreatmentReport = async (req, res) => {
         branch_id: branch.branch_id,
         branch_name: branch.name,
         total_treatments: branchTreatments.length,
-        suggested_treatments: branchTreatments.filter(t => t.status === 'önerilen').length,
-        approved_treatments: branchTreatments.filter(t => t.status === 'onaylanan').length,
-        completed_treatments: branchTreatments.filter(t => t.status === 'tamamlanan').length,
+        suggested_treatments: branchTreatments.filter(t => t.status === 'suggested').length,
+        approved_treatments: branchTreatments.filter(t => t.status === 'approved').length,
+        completed_treatments: branchTreatments.filter(t => t.status === 'completed').length,
         doctor_count: doctors.filter(d => d.branch_id === branch.branch_id).length
       };
     });
@@ -333,9 +333,9 @@ exports.getTreatmentReport = async (req, res) => {
       
       return {
         date: day,
-        suggested: dayTreatments.filter(t => t.status === 'önerilen').length,
-        approved: dayTreatments.filter(t => t.status === 'onaylanan').length,
-        completed: dayTreatments.filter(t => t.status === 'tamamlanan').length,
+        suggested: dayTreatments.filter(t => t.status === 'suggested').length,
+        approved: dayTreatments.filter(t => t.status === 'approved').length,
+        completed: dayTreatments.filter(t => t.status === 'completed').length,
         total: dayTreatments.length
       };
     });
