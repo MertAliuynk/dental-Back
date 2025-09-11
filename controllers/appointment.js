@@ -30,8 +30,13 @@ const createAppointment = asyncErrorWrapper(async (req, res, next) => {
       }
     }
 
-    // Status kontrolü: missed ise missed, yoksa scheduled
-    const appointmentStatus = status === 'missed' ? 'missed' : 'scheduled';
+    // Status kontrolü: missed, saatkapatildi veya scheduled
+    let appointmentStatus = 'scheduled';
+    if (status === 'missed') {
+      appointmentStatus = 'missed';
+    } else if (status === 'saatkapatildi') {
+      appointmentStatus = 'saatkapatildi';
+    }
     // Randevu oluştur
     const newAppointment = await executeQuery(`
       INSERT INTO appointments (patient_id, doctor_id, branch_id, appointment_time, duration_minutes, status, notes)
@@ -160,7 +165,8 @@ const getAppointments = asyncErrorWrapper(async (req, res, next) => {
     scheduled: 'Planlandı',
     attended: 'Geldi',
     missed: 'Gelmedi',
-    cancelled: 'İptal'
+    cancelled: 'İptal',
+    postponed: 'Ertelendi'
   };
   const appointmentsWithTrStatus = appointments.map(app => ({
     ...app,
@@ -320,7 +326,7 @@ const updateAppointmentStatus = asyncErrorWrapper(async (req, res, next) => {
   }
 
   // Geçerli durum değerleri
-  const validStatuses = ['scheduled', 'attended', 'missed', 'cancelled'];
+  const validStatuses = ['scheduled', 'attended', 'missed', 'cancelled', 'postponed'];
   if (!validStatuses.includes(status)) {
     return res.status(400).json({ success: false, message: "Geçersiz durum değeri" });
   }
