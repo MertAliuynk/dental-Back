@@ -31,23 +31,19 @@ async function createPatient(data) {
 }
 
 async function updatePatient(patientId, data) {
-  const { branchId, firstName, lastName, tcNumber, phone, birthDate, doctorIds, notes } = data;
-  // Dinamik sorgu: tcNumber varsa güncelle, yoksa dokunma
+  const { firstName, lastName, tcNumber, phone, birthDate, doctorIds, notes } = data;
   let setParts = [
-    'branch_id = $1',
-    'first_name = $2',
-    'last_name = $3',
-    'phone = $4',
-    'birth_date = $5',
-    'notes = $6',
+    'first_name = $1',
+    'last_name = $2',
+    'phone = $3',
+    'birth_date = $4',
+    'notes = $5',
     'updated_at = CURRENT_TIMESTAMP'
   ];
-  let params = [branchId, firstName, lastName, phone, birthDate, notes];
-  let tcIndex = null;
+  let params = [firstName, lastName, phone, birthDate, notes];
   if (typeof tcNumber === 'string' && tcNumber.length > 0) {
-    setParts.splice(3, 0, 'tc_number = $' + (params.length + 1));
-    params.splice(3, 0, tcNumber);
-    tcIndex = params.length; // Sadece debug için
+    setParts.splice(2, 0, 'tc_number = $' + (params.length + 1));
+    params.splice(2, 0, tcNumber);
   }
   const query = `
     UPDATE patients
