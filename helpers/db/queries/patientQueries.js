@@ -31,7 +31,7 @@ async function createPatient(data) {
 }
 
 async function updatePatient(patientId, data) {
-  const { firstName, lastName, tcNumber, phone, birthDate, doctorIds, notes } = data;
+  const { firstName, lastName, tcNumber, phone, birthDate, doctorIds, notes, branchId } = data;
   let setParts = [
     'first_name = $1',
     'last_name = $2',
@@ -41,14 +41,21 @@ async function updatePatient(patientId, data) {
     'updated_at = CURRENT_TIMESTAMP'
   ];
   let params = [firstName, lastName, phone, birthDate, notes];
+  let paramIndex = params.length + 1;
   if (typeof tcNumber === 'string' && tcNumber.length > 0) {
-    setParts.splice(2, 0, 'tc_number = $' + (params.length + 1));
+    setParts.splice(2, 0, 'tc_number = $' + paramIndex);
     params.splice(2, 0, tcNumber);
+    paramIndex++;
+  }
+  if (typeof branchId !== 'undefined' && branchId !== null) {
+    setParts.push('branch_id = $' + paramIndex);
+    params.push(branchId);
+    paramIndex++;
   }
   const query = `
     UPDATE patients
     SET ${setParts.join(', ')}
-    WHERE patient_id = $${params.length + 1}
+    WHERE patient_id = $${paramIndex}
     RETURNING *
   `;
   params.push(patientId);

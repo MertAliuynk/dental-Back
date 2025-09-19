@@ -5,7 +5,7 @@ const { executeQuery } = require('../helpers/db/utils/queryExecutor');
 
 // Yeni randevu oluştur
 const createAppointment = asyncErrorWrapper(async (req, res, next) => {
-  const { patientId, doctorId, appointmentTime, duration = 30, notes = '', branchId, status } = req.body;
+  const { patientId, doctorId, appointmentTime, duration = 30, notes = '', branchId, status, created_by } = req.body;
 
   // Validasyon
   if (!doctorId || !appointmentTime) {
@@ -39,10 +39,10 @@ const createAppointment = asyncErrorWrapper(async (req, res, next) => {
     }
     // Randevu oluştur
     const newAppointment = await executeQuery(`
-      INSERT INTO appointments (patient_id, doctor_id, branch_id, appointment_time, duration_minutes, status, notes)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
-      RETURNING appointment_id, patient_id, doctor_id, branch_id, appointment_time, duration_minutes, status, notes, created_at
-    `, [patientId || null, doctorId, finalBranchId, appointmentTime, duration, appointmentStatus, notes]);
+      INSERT INTO appointments (patient_id, doctor_id, branch_id, appointment_time, duration_minutes, status, notes, created_by)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING appointment_id, patient_id, doctor_id, branch_id, appointment_time, duration_minutes, status, notes, created_by, created_at
+    `, [patientId || null, doctorId, finalBranchId, appointmentTime, duration, appointmentStatus, notes, created_by || null]);
 
     // Hasta ve doktor adını da ekle
     let patientInfo = [{}];

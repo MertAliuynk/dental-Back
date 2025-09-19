@@ -102,14 +102,18 @@ router.put("/:id", async (req, res) => {
   try {
     const patientId = req.params.id;
   const { branchId, firstName, lastName, tcNumber, phone, birthDate, doctorId, notes, anamnez } = req.body;
-    
+
     if (!firstName || !lastName) {
       return res.status(400).json({ success: false, message: "Ad ve soyad zorunludur." });
     }
 
-    const updatedPatient = await updatePatient(patientId, {
-      branchId, firstName, lastName, tcNumber, phone, birthDate, doctorId, notes
-    });
+    // Prepare update data, only include branchId if present
+    const updateData = { firstName, lastName, tcNumber, phone, birthDate, doctorId, notes };
+    if (typeof branchId !== 'undefined' && branchId !== null) {
+      updateData.branchId = branchId;
+    }
+
+    const updatedPatient = await updatePatient(patientId, updateData);
 
     if (!updatedPatient) {
       return res.status(404).json({ success: false, message: "Hasta bulunamadı." });
