@@ -42,12 +42,16 @@ const createBranch = asyncErrorWrapper(async (req, res, next) => {
 const updateBranch = asyncErrorWrapper(async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { name, address } = req.body || {};
+    const { name, address, permanent_doctor_count } = req.body || {};
     if (!id) return res.status(400).json({ success: false, message: 'Geçersiz şube ID' });
     if (!name || String(name).trim() === "") {
       return res.status(400).json({ success: false, message: "Şube adı zorunludur" });
     }
-    const updated = await branchQueries.updateBranch(id, { name: String(name).trim(), address: address || null });
+    const updated = await branchQueries.updateBranch(id, {
+      name: String(name).trim(),
+      address: address || null,
+      permanent_doctor_count: typeof permanent_doctor_count !== 'undefined' ? Number(permanent_doctor_count) : undefined
+    });
     if (!updated) return res.status(404).json({ success: false, message: 'Şube bulunamadı' });
     res.json({ success: true, data: updated, message: 'Şube güncellendi' });
   } catch (err) {
