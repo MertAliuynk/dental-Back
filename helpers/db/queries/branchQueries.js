@@ -21,14 +21,23 @@ async function createBranch(data) {
 }
 
 async function updateBranch(branchId, data) {
-  const { name, address } = data;
+  const { name, address, permanent_doctor_count } = data;
+  let setParts = ['name = $1', 'address = $2'];
+  let params = [name, address];
+  let paramIndex = params.length + 1;
+  if (typeof permanent_doctor_count !== 'undefined' && permanent_doctor_count !== null) {
+    setParts.push(`permanent_doctor_count = $${paramIndex}`);
+    params.push(permanent_doctor_count);
+    paramIndex++;
+  }
   const query = `
     UPDATE branches
-  SET name = $1, address = $2
-    WHERE branch_id = $3
+    SET ${setParts.join(', ')}
+    WHERE branch_id = $${paramIndex}
     RETURNING *
   `;
-  return executeQuery(query, [name, address, branchId], { returnSingle: true });
+  params.push(branchId);
+  return executeQuery(query, params, { returnSingle: true });
 }
 
 async function deleteBranch(branchId) {
