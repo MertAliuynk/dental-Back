@@ -90,10 +90,12 @@ const getAppointments = asyncErrorWrapper(async (req, res, next) => {
     appointments = await executeQuery(`
       SELECT a.*, u.first_name AS doctor_first_name, u.last_name AS doctor_last_name,
         p.first_name || ' ' || p.last_name as patient_name,
-        p.phone as patient_phone
+        p.phone as patient_phone,
+        cu.first_name AS created_by_first_name, cu.last_name AS created_by_last_name
       FROM appointments a
       LEFT JOIN users u ON a.doctor_id = u.user_id
       LEFT JOIN patients p ON a.patient_id = p.patient_id
+      LEFT JOIN users cu ON a.created_by = cu.user_id
       WHERE a.patient_id = $1
       ORDER BY a.appointment_time DESC
     `, [patient_id]);
@@ -102,10 +104,12 @@ const getAppointments = asyncErrorWrapper(async (req, res, next) => {
     let query = `
       SELECT a.*, u.first_name AS doctor_first_name, u.last_name AS doctor_last_name,
              p.first_name || ' ' || p.last_name as patient_name,
-             p.phone as patient_phone
+             p.phone as patient_phone,
+             cu.first_name AS created_by_first_name, cu.last_name AS created_by_last_name
       FROM appointments a
       LEFT JOIN users u ON a.doctor_id = u.user_id
       LEFT JOIN patients p ON a.patient_id = p.patient_id
+      LEFT JOIN users cu ON a.created_by = cu.user_id
       WHERE DATE(a.appointment_time) >= $1 AND DATE(a.appointment_time) <= $2
     `;
     let params = [start_date, end_date];
@@ -124,10 +128,12 @@ const getAppointments = asyncErrorWrapper(async (req, res, next) => {
     appointments = await executeQuery(`
       SELECT a.*, u.first_name AS doctor_first_name, u.last_name AS doctor_last_name,
              p.first_name || ' ' || p.last_name as patient_name,
-             p.phone as patient_phone
+             p.phone as patient_phone,
+             cu.first_name AS created_by_first_name, cu.last_name AS created_by_last_name
       FROM appointments a
       LEFT JOIN users u ON a.doctor_id = u.user_id
       LEFT JOIN patients p ON a.patient_id = p.patient_id
+      LEFT JOIN users cu ON a.created_by = cu.user_id
       WHERE a.branch_id = $1 AND a.doctor_id = $2 AND DATE(a.appointment_time) = $3
       ORDER BY a.appointment_time ASC
     `, [branch_id, doctor_id, date]);
@@ -136,10 +142,12 @@ const getAppointments = asyncErrorWrapper(async (req, res, next) => {
     appointments = await executeQuery(`
       SELECT a.*, u.first_name AS doctor_first_name, u.last_name AS doctor_last_name,
              p.first_name || ' ' || p.last_name as patient_name,
-             p.phone as patient_phone
+             p.phone as patient_phone,
+             cu.first_name AS created_by_first_name, cu.last_name AS created_by_last_name
       FROM appointments a
       LEFT JOIN users u ON a.doctor_id = u.user_id
       LEFT JOIN patients p ON a.patient_id = p.patient_id
+      LEFT JOIN users cu ON a.created_by = cu.user_id
       WHERE a.branch_id = $1 AND DATE(a.appointment_time) = $2
       ORDER BY a.appointment_time ASC
     `, [branch_id, date]);
@@ -148,10 +156,12 @@ const getAppointments = asyncErrorWrapper(async (req, res, next) => {
     appointments = await executeQuery(`
       SELECT a.*, u.first_name AS doctor_first_name, u.last_name AS doctor_last_name,
              p.first_name || ' ' || p.last_name as patient_name,
-             p.phone as patient_phone
+             p.phone as patient_phone,
+             cu.first_name AS created_by_first_name, cu.last_name AS created_by_last_name
       FROM appointments a
       LEFT JOIN users u ON a.doctor_id = u.user_id
       LEFT JOIN patients p ON a.patient_id = p.patient_id
+      LEFT JOIN users cu ON a.created_by = cu.user_id
       WHERE a.doctor_id = $1
       ORDER BY a.appointment_time ASC
     `, [doctor_id]);
