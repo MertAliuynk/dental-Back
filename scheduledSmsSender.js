@@ -2,7 +2,6 @@
 const BAYRAM_DATES = [
 	{ month: 4, day: 23, message: '23 Nisan Ulusal Egemenlik ve Çocuk Bayramınız kutlu olsun! Karadeniz Diş Poliklinikleri ailesi olarak nice sağlıklı günler dileriz.' },
 	{ month: 5, day: 19, message: '19 Mayıs Atatürk\'ü Anma, Gençlik ve Spor Bayramınız kutlu olsun! Karadeniz Diş Poliklinikleri ailesi olarak nice sağlıklı günler dileriz.' },
-	{ month: 8, day: 30, message: '30 Ağustos Zafer Bayramınız kutlu olsun! Karadeniz Diş Poliklinikleri ailesi olarak nice sağlıklı günler dileriz.' },
 	{ month: 10, day: 29, message: '29 Ekim Cumhuriyet Bayramınız kutlu olsun! Karadeniz Diş Poliklinikleri ailesi olarak nice sağlıklı günler dileriz.' }
 ];
 
