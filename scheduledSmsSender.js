@@ -44,12 +44,6 @@ async function getTodayBirthdayPatients() {
 
 async function sendBirthdaySmsToPatient(patient) {
 	const message = `Sayın ${patient.first_name} ${patient.last_name}, Karadeniz Diş Poliklinikleri ailesi olarak doğum gününüzü kutlarız.`;
-	try {
-		await sendSmsNetgsm({ phone: patient.phone, message });
-		console.log(`Doğum günü SMS gönderildi: ${patient.first_name} ${patient.last_name}`);
-	} catch (err) {
-		console.error(`SMS gönderilemedi: ${patient.first_name} ${patient.last_name} - ${err.message}`);
-	}
 }
 
 async function runBirthdaySmsJob() {
