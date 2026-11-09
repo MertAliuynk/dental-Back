@@ -149,6 +149,9 @@ router.put("/:id", async (req, res) => {
     res.json({ success: true, data: updatedPatient, message: "Hasta bilgileri güncellendi." });
   } catch (err) {
     console.error('Hasta güncelleme hatası:', err);
+    if (err && (err.code === '23505' || String(err.message || '').includes('duplicate'))) {
+      return res.status(409).json({ success: false, message: "Aynı TC ile kayıtlı başka bir hasta vardır." });
+    }
     res.status(500).json({ success: false, message: "Hasta güncellenirken hata oluştu." });
   }
 });

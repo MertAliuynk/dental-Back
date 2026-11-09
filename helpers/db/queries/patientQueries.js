@@ -43,8 +43,8 @@ async function updatePatient(patientId, data) {
   let params = [firstName, lastName, phone, birthDate, notes];
   let paramIndex = params.length + 1;
   if (typeof tcNumber === 'string' && tcNumber.length > 0) {
-    setParts.splice(2, 0, 'tc_number = $' + paramIndex);
-    params.splice(2, 0, tcNumber);
+    setParts.push('tc_number = $' + paramIndex);
+    params.push(tcNumber);
     paramIndex++;
   }
   if (typeof branchId !== 'undefined' && branchId !== null) {
